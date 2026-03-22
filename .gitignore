@@ -26,6 +26,7 @@ backend/.env
 *.pt
 *.pth
 *.onnx
+*.mp4
 backend/best.pt
 backend/best.onnx
 backend/best_quantized.onnx
