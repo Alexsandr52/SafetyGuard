@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SafetyGuard - Система Детекции Безопасности</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .card-gradient {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
+        }
+        .upload-zone {
+            border: 2px dashed #cbd5e1;
+            transition: all 0.3s ease;
+        }
+        .upload-zone:hover, .upload-zone.dragover {
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.05);
+        }
+        .progress-bar {
+            transition: width 0.3s ease;
+        }
+        .detection-badge {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        .status-dot {
+            animation: blink 1.5s infinite;
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="gradient-bg text-white shadow-lg">
+        <div class="container mx-auto px-4 py-6">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="bg-white/20 p-3 rounded-xl">
+                        <i class="fas fa-shield-alt text-2xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-bold">SafetyGuard</h1>
+                        <p class="text-sm text-white/80">Система Детекции Безопасности</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="hidden md:flex items-center space-x-2 bg-white/10 px-4 py-2 rounded-lg">
+                        <i class="fas fa-circle-check text-green-300"></i>
+                        <span class="text-sm">Система активна</span>
+                    </div>
+                    <button onclick="showHelp()" class="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg transition-colors">
+                        <i class="fas fa-question-circle mr-2"></i>Помощь
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8">
+        <!-- Detection Classes -->
+        <section class="mb-8">
+            <h2 class="text-lg font-semibold text-gray-700 mb-4">
+                <i class="fas fa-eye mr-2 text-purple-600"></i>Классы детекции
+            </h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-red-500 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-hard-hat text-white"></i>
+                        </div>
+                        <div>
+                            <p class="font-semibold text-gray-800">Каска</p>
+                            <p class="text-xs text-gray-500">Helmet</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-yellow-400 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-vest text-white"></i>
+                        </div>
+                        <div>
+                            <p class="font-semibold text-gray-800">Жилет</p>
+                            <p class="text-xs text-gray-500">Vest</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-head-side text-white"></i>
+                        </div>
+                        <div>
+                            <p class="font-semibold text-gray-800">Голова</p>
+                            <p class="text-xs text-gray-500">Head</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-user text-white"></i>
+                        </div>
+                        <div>
+                            <p class="font-semibold text-gray-800">Человек</p>
+                            <p class="text-xs text-gray-500">Person</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Upload Section -->
+        <section class="mb-8">
+            <h2 class="text-lg font-semibold text-gray-700 mb-4">
+                <i class="fas fa-cloud-upload-alt mr-2 text-purple-600"></i>Загрузка видео
+            </h2>
+            <div id="uploadZone" class="upload-zone bg-white rounded-2xl p-12 text-center cursor-pointer shadow-sm">
+                <input type="file" id="videoInput" accept="video/*" class="hidden">
+                <div class="flex flex-col items-center">
+                    <div class="w-20 h-20 bg-purple-100 rounded-full flex items-center justify-center mb-4">
+                        <i class="fas fa-film text-3xl text-purple-600"></i>
+                    </div>
+                    <p class="text-lg font-medium text-gray-700 mb-2">Перетащите видео сюда</p>
+                    <p class="text-gray-500 mb-4">или нажмите для выбора файла</p>
+                    <span class="text-sm text-gray-400">Поддерживаемые форматы: MP4, AVI, MOV</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Current Task -->
+        <section id="taskSection" class="mb-8 hidden">
+            <h2 class="text-lg font-semibold text-gray-700 mb-4">
+                <i class="fas fa-tasks mr-2 text-purple-600"></i>Статус обработки
+            </h2>
+            <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <p class="text-sm text-gray-500">ID задачи</p>
+                        <p id="taskId" class="font-mono text-sm text-gray-700"></p>
+                    </div>
+                    <div id="statusBadge" class="flex items-center space-x-2">
+                        <span class="status-dot w-2 h-2 bg-yellow-400 rounded-full"></span>
+                        <span id="statusText" class="text-sm font-medium text-yellow-600">В очереди</span>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <div class="flex justify-between text-sm mb-2">
+                        <span class="text-gray-600">Прогресс</span>
+                        <span id="progressPercent" class="font-medium text-purple-600">0%</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div id="progressBar" class="progress-bar bg-gradient-to-r from-purple-500 to-pink-500 h-2 rounded-full" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <div id="downloadSection" class="hidden mt-4 pt-4 border-t border-gray-100">
+                    <button onclick="downloadVideo()" class="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 rounded-xl font-medium hover:shadow-lg transition-all">
+                        <i class="fas fa-download mr-2"></i>Скачать обработанное видео
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Statistics -->
+        <section>
+            <h2 class="text-lg font-semibold text-gray-700 mb-4">
+                <i class="fas fa-chart-bar mr-2 text-purple-600"></i>Статистика системы
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-500">Модель</p>
+                            <p class="text-xl font-bold text-gray-800">YOLOv8</p>
+                        </div>
+                        <div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-brain text-purple-600"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-500">Квантование</p>
+                            <p class="text-xl font-bold text-gray-800">INT8</p>
+                        </div>
+                        <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-bolt text-green-600"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-500">Брокер</p>
+                            <p class="text-xl font-bold text-gray-800">Redis</p>
+                        </div>
+                        <div class="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-database text-red-600"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-gray-100 mt-12">
+        <div class="container mx-auto px-4 py-6">
+            <div class="flex flex-col md:flex-row items-center justify-between">
+                <p class="text-gray-600 text-sm">
+                    © 2025 SafetyGuard. Система детекции безопасности.
+                </p>
+                <div class="flex items-center space-x-4 mt-4 md:mt-0">
+                    <span class="text-xs text-gray-400">
+                        <i class="fas fa-code mr-1"></i>Powered by YOLOv8
+                    </span>
+                    <span class="text-xs text-gray-400">
+                        <i class="fas fa-server mr-1"></i>FastAPI
+                    </span>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Help Modal -->
+    <div id="helpModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-2xl p-8 max-w-md mx-4 shadow-2xl">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-xl font-bold text-gray-800">Помощь</h3>
+                <button onclick="closeHelp()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <div class="space-y-4 text-gray-600">
+                <div>
+                    <h4 class="font-semibold text-gray-800 mb-2">Как использовать:</h4>
+                    <ol class="list-decimal list-inside space-y-1 text-sm">
+                        <li>Загрузите видео с рабочей площадки</li>
+                        <li>Дождитесь окончания обработки</li>
+                        <li>Скачайте видео с разметкой</li>
+                    </ol>
+                </div>
+                <div>
+                    <h4 class="font-semibold text-gray-800 mb-2">Классы детекции:</h4>
+                    <ul class="space-y-1 text-sm">
+                        <li><span class="text-red-500 font-medium">●</span> Каска — защитный головной убор</li>
+                        <li><span class="text-yellow-500 font-medium">●</span> Жилет — защитная одежда</li>
+                        <li><span class="text-green-500 font-medium">●</span> Голова — без каски</li>
+                        <li><span class="text-blue-500 font-medium">●</span> Человек — любой человек</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000';
+        let currentTaskId = null;
+        let statusInterval = null;
+
+        // Upload Zone
+        const uploadZone = document.getElementById('uploadZone');
+        const videoInput = document.getElementById('videoInput');
+
+        uploadZone.addEventListener('click', () => videoInput.click());
+
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.classList.add('dragover');
+        });
+
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.classList.remove('dragover');
+        });
+
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('video/')) {
+                uploadFile(file);
+            }
+        });
+
+        videoInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                uploadFile(file);
+            }
+        });
+
+        async function uploadFile(file) {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const response = await fetch(`${API_BASE}/process-video/`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    currentTaskId = data.task_id;
+                    showTask(currentTaskId);
+                    startPolling();
+                } else {
+                    alert('Ошибка при загрузке файла');
+                }
+            } catch (error) {
+                alert('Ошибка соединения с сервером');
+            }
+        }
+
+        function showTask(taskId) {
+            document.getElementById('taskSection').classList.remove('hidden');
+            document.getElementById('taskId').textContent = taskId;
+            document.getElementById('downloadSection').classList.add('hidden');
+            updateStatus('queued', 'В очереди', 'yellow');
+        }
+
+        function updateStatus(status, text, color) {
+            const badge = document.getElementById('statusBadge');
+            const statusText = document.getElementById('statusText');
+            const dot = badge.querySelector('.status-dot');
+
+            statusText.textContent = text;
+            dot.className = `status-dot w-2 h-2 bg-${color}-400 rounded-full`;
+            statusText.className = `text-sm font-medium text-${color}-600`;
+        }
+
+        async function checkStatus() {
+            try {
+                const response = await fetch(`${API_BASE}/status/${currentTaskId}`);
+                if (response.ok) {
+                    const data = await response.json();
+
+                    // Update progress
+                    document.getElementById('progressPercent').textContent = `${data.progress}%`;
+                    document.getElementById('progressBar').style.width = `${data.progress}%`;
+
+                    // Update status
+                    switch (data.status) {
+                        case 'queued':
+                            updateStatus('queued', 'В очереди', 'yellow');
+                            break;
+                        case 'processing':
+                            updateStatus('processing', 'Обработка...', 'blue');
+                            break;
+                        case 'completed':
+                            updateStatus('completed', 'Завершено', 'green');
+                            document.getElementById('downloadSection').classList.remove('hidden');
+                            clearInterval(statusInterval);
+                            break;
+                        case 'error':
+                            updateStatus('error', 'Ошибка', 'red');
+                            clearInterval(statusInterval);
+                            alert('Произошла ошибка при обработке видео');
+                            break;
+                    }
+                }
+            } catch (error) {
+                console.error('Error checking status:', error);
+            }
+        }
+
+        function startPolling() {
+            if (statusInterval) {
+                clearInterval(statusInterval);
+            }
+            statusInterval = setInterval(checkStatus, 2000);
+        }
+
+        function downloadVideo() {
+            window.open(`${API_BASE}/download/${currentTaskId}`, '_blank');
+        }
+
+        function showHelp() {
+            document.getElementById('helpModal').classList.remove('hidden');
+            document.getElementById('helpModal').classList.add('flex');
+        }
+
+        function closeHelp() {
+            document.getElementById('helpModal').classList.add('hidden');
+            document.getElementById('helpModal').classList.remove('flex');
+        }
+
+        // Close modal on background click
+        document.getElementById('helpModal').addEventListener('click', (e) => {
+            if (e.target.id === 'helpModal') {
+                closeHelp();
+            }
+        });
+    </script>
+</body>
+</html>

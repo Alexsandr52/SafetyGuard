@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: safetyguard-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - safetyguard-network
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: safetyguard-api
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./uploads:/app/uploads
+      - ./results:/app/results
+      - ./frontend:/app/frontend
+      - ./backend:/app/backend
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      redis:
+        condition: service_healthy
+    command: uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
+    networks:
+      - safetyguard-network
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: safetyguard-worker
+    volumes:
+      - ./uploads:/app/uploads
+      - ./results:/app/results
+      - ./backend:/app/backend
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      redis:
+        condition: service_healthy
+    command: python backend/worker.py
+    networks:
+      - safetyguard-network
+
+volumes:
+  redis_data:
+    driver: local
+
+networks:
+  safetyguard-network:
+    driver: bridge

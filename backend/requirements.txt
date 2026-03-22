@@ -1,0 +1,20 @@
+# FastAPI and Web Server
+fastapi==0.135.1
+uvicorn[standard]==0.42.0
+python-multipart==0.0.22
+
+# Redis
+redis==7.3.0
+
+# Computer Vision
+opencv-python==4.13.0.92
+ultralytics==8.4.24
+pillow==12.1.1
+
+# AI/ML
+torch==2.10.0
+torchvision==0.25.0
+numpy==2.4.3
+
+# Additional dependencies
+python-dotenv==1.0.0

@@ -1,0 +1,52 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+
+# Config and logs
+.config/
+.ipynb_checkpoints/
+*.log
+logs/
+
+# Backend specific
+backend/uploads/*
+!backend/uploads/.gitkeep
+backend/results/*
+!backend/results/.gitkeep
+backend/.env
+.env
+
+# Model weights (too large for git)
+*.pt
+*.pth
+*.onnx
+backend/best.pt
+backend/best.onnx
+backend/best_quantized.onnx
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# YOLO training
+runs/
+yolo_temp/
+
+# Docker
+.dockerignore
+
+# OS
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
