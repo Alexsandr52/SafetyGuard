@@ -15,6 +15,8 @@
 </div>
 
 ---
+<img width="833" height="650" alt="image" src="https://github.com/user-attachments/assets/531e2679-0d7c-471c-9881-0c83e7aad0c6" />
+---
 
 ## Описание
 
