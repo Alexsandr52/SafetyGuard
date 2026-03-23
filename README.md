@@ -2,7 +2,6 @@
 
 <div align="center">
 
-![SafetyGuard](https://img.shields.io/badge/SafetyGuard-v1.0.0-purple)
 ![Python](https://img.shields.io/badge/Python-3.8+-blue)
 ![YOLO](https://img.shields.io/badge/YOLO-v8-orange)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.104+-green)
