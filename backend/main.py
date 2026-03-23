@@ -6,13 +6,8 @@ from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-app = FastAPI(
-    title="SafetyGuard API",
-    description="Система детекции безопасности с использованием YOLOv8",
-    version="1.0.0"
-)
+app = FastAPI(title="SafetyGuard API")
 
-# CORS middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=['*'],
@@ -21,68 +16,47 @@ app.add_middleware(
     allow_headers=['*'],
 )
 
-# Получаем путь к корневой директории проекта
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FRONTEND_DIR = os.path.join(PROJECT_ROOT, 'frontend')
 UPLOAD_DIR = os.path.join(PROJECT_ROOT, 'uploads')
 RESULT_DIR = os.path.join(PROJECT_ROOT, 'results')
 
-# Создаем директории если их нет
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 os.makedirs(RESULT_DIR, exist_ok=True)
 os.makedirs(FRONTEND_DIR, exist_ok=True)
 
-# Монтируем статические файлы
 app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
 
-print(f'PROJECT_ROOT: {PROJECT_ROOT}')
-print(f'FRONTEND_DIR: {FRONTEND_DIR}')
-print(f'UPLOAD_DIR: {UPLOAD_DIR}')
-print(f'RESULT_DIR: {RESULT_DIR}')
+# Глобальная переменная для Redis
+r = None
 
-REDIS_HOST = os.getenv('REDIS_HOST', 'localhost')
-REDIS_PORT = int(os.getenv('REDIS_PORT', '6379'))
-
-try:
-    r = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=0, decode_responses=False)
-    r.ping()
-    print(f'✓ Connected to Redis at {REDIS_HOST}:{REDIS_PORT}')
-except Exception as e:
-    print(f'✗ Error connecting to Redis: {e}')
-    print('  Please install and start Redis:')
-    print('  - macOS: brew install redis && brew services start redis')
-    print('  - Linux: sudo apt-get install redis-server && sudo systemctl start redis')
-    print('  - Docker: Ensure redis service is running in docker-compose')
-    r = None
-
+def ensure_redis():
+    """Убедится, что Redis подключен"""
+    global r
+    if r is None:
+        try:
+            r = redis.Redis(host='safetyguard-redis', port=6379, db=0, decode_responses=False)
+            r.ping()
+            print('✓ Redis connected')
+        except Exception as e:
+            print(f'✗ Redis error: {e}')
+            return False
+    return True
 
 @app.get('/')
 async def root():
-    """Redirect to frontend"""
     from fastapi.responses import RedirectResponse
     return RedirectResponse(url="/static/index.html")
 
-
 @app.post('/process-video/')
 async def process_video(file: UploadFile = File(...)):
-    """
-    Принимает видеофайл для обработки и ставит в очередь
-
-    - **file**: Видеофайл для обработки (MP4, AVI, MOV)
-
-    Returns:
-        - task_id: Уникальный идентификатор задачи
-        - status: Статус задачи (queued)
-    """
-    if r is None:
-        raise HTTPException(status_code=503, detail='Redis connection not available')
-
+    if not ensure_redis():
+        raise HTTPException(status_code=503, detail='Redis not available')
     try:
         task_id = str(uuid.uuid4())
         file_extension = os.path.splitext(file.filename)[1] or '.mp4'
-        input_path = os.path.join(UPLOAD_DIR, f'{task_id}{file_extension}')
+        input_path = os.path.join(UPLOAD_DIR, task_id + file_extension)
 
-        # Сохраняем файл
         with open(input_path, 'wb') as buffer:
             buffer.write(await file.read())
 
@@ -93,31 +67,21 @@ async def process_video(file: UploadFile = File(...)):
             'progress': '0'
         }
 
-        # Запись в Redis
-        r.hset(f'task:{task_id}', mapping=task_data)
+        r.hset('task:' + task_id, mapping=task_data)
         r.rpush('tasks_queue', task_id)
-
-        print(f'✓ Task {task_id} queued for processing')
+        print(f'✓ Task {task_id} queued')
 
         return {'task_id': task_id, 'status': 'queued'}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f'Error processing video: {str(e)}')
-
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get('/status/{task_id}')
 async def get_status(task_id: str):
-    """
-    Проверяет статус обработки видео
+    if not ensure_redis():
+        raise HTTPException(status_code=503, detail='Redis not available')
 
-    - **task_id**: Идентификатор задачи
-
-    Returns:
-        - task_id: Идентификатор задачи
-        - status: Статус (queued, processing, completed, error)
-        - progress: Прогресс в процентах (0-100)
-    """
     try:
-        task_data = r.hgetall(f'task:{task_id}')
+        task_data = r.hgetall('task:' + task_id)
         if not task_data:
             raise HTTPException(status_code=404, detail='Task not found')
 
@@ -127,33 +91,23 @@ async def get_status(task_id: str):
             'progress': int(task_data.get(b'progress', b'0').decode('utf-8'))
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f'Error getting status: {str(e)}')
-
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get('/download/{task_id}')
 async def download_video(task_id: str):
-    """
-    Скачивает обработанное видео
+    if not ensure_redis():
+        raise HTTPException(status_code=503, detail='Redis not available')
 
-    - **task_id**: Идентификатор задачи
-
-    Returns:
-        - File: Обработанное видеофайл
-    """
     try:
-        task_data = r.hgetall(f'task:{task_id}')
+        task_data = r.hgetall('task:' + task_id)
         if not task_data or task_data.get(b'status').decode('utf-8') != 'completed':
-            raise HTTPException(status_code=404, detail='Video not ready or task not found')
+            raise HTTPException(status_code=404, detail='Video not ready')
 
-        result_filename = f'{task_id}_result.mp4'
-        result_path = os.path.join(RESULT_DIR, result_filename)
-
+        result_path = os.path.join(RESULT_DIR, task_id + '_result.mp4')
         if os.path.exists(result_path):
-            print(f'✓ Downloading result for task {task_id}')
-            return FileResponse(result_path, media_type='video/mp4', filename=f'processed_{task_id}.mp4')
+            print(f'✓ Downloading {task_id}')
+            return FileResponse(result_path, media_type='video/mp4', filename=task_id + '_result.mp4')
 
         raise HTTPException(status_code=404, detail='Result file missing')
-    except HTTPException:
-        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f'Error downloading video: {str(e)}')
+        raise HTTPException(status_code=500, detail=str(e))

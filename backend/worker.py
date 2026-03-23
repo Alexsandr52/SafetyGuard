@@ -14,7 +14,7 @@ MODEL_PATH = os.path.join(os.path.dirname(__file__), 'best.pt')
 RESULT_DIR = os.path.join(PROJECT_ROOT, 'results')
 
 print('╔════════════════════════════════════════════════╗')
-print('║         SafetyGuard Worker v1.0.0               ║')
+print('║         SafetyGuard Worker v1.0.0              ║')
 print('╚════════════════════════════════════════════════╝')
 print()
 print(f'PROJECT_ROOT: {PROJECT_ROOT}')

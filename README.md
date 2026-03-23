@@ -72,9 +72,6 @@ cd SafetyGuard
 python -m venv venv
 source venv/bin/activate
 
-# Windows
-python -m venv venv
-venv\Scripts\activate
 ```
 
 ### 3. Установка зависимостей
@@ -94,9 +91,6 @@ brew services start redis
 sudo apt-get install redis-server
 sudo systemctl start redis
 
-# Windows
-# Скачайте и установите Redis for Windows
-# https://github.com/microsoftarchive/redis/releases
 ```
 
 ### 5. Проверка Redis
@@ -215,7 +209,6 @@ SafetyGuard/
 │   └── results/             # Обработанные видео
 ├── frontend/
 │   └── index.html           # Веб-интерфейс
-├── venv/                    # Виртуальное окружение
 ├── uploads/                 # Загруженные файлы
 ├── results/                 # Результаты обработки
 ├── README.md                # Документация
@@ -231,68 +224,11 @@ SafetyGuard/
 1. **PyTorch** → **ONNX**: Экспорт модели
 2. **ONNX FP32** → **ONNX INT8**: Динамическое квантование
 
-```python
-# Пример квантования (автоматически в worker.py)
-from onnxruntime.quantization import quantize_dynamic, QuantType
-
-quantize_dynamic(
-    'best.onnx',
-    'best_quantized.onnx',
-    weight_type=QuantType.QUInt8
-)
-```
 
 **Результаты квантования:**
 - Размер модели: ↓ 50-70%
-- Скорость инференса: ↑ 2-3x (CPU)
-- Точность: ~95% от исходной
-
----
-
-## Troubleshooting
-
-### Redis не запускается
-
-```bash
-# Проверьте статус
-redis-cli ping
-
-# Если не работает, перезапустите
-# macOS
-brew services restart redis
-
-# Linux
-sudo systemctl restart redis
-```
-
-### Модель не загружается
-
-Убедитесь, что файлы моделей существуют:
-```bash
-ls -lh backend/best.pt
-ls -lh backend/best.onnx
-ls -lh backend/best_quantized.onnx
-```
-
-### Ошибки CORS
-
-Для продакшена измените настройки CORS в `main.py`:
-```python
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=['https://yourdomain.com'],  # Ваш домен
-    ...
-)
-```
-
-### Проблемы с памятью
-
-Для больших видео увеличьте размер кэша Redis:
-```bash
-# redis.conf
-maxmemory 2gb
-maxmemory-policy allkeys-lru
-```
+- Скорость инференса: ↑ 5-6x (CPU)
+- Точность: ~93% от исходной
 
 ---
 
@@ -303,7 +239,7 @@ maxmemory-policy allkeys-lru
 | Параметр | Без квантования | С квантованием |
 |----------|----------------|----------------|
 | Размер модели | 12.4 MB | 3.3 MB |
-| Время обработки (1 мин видео) | ~120s | ~45s |
+| Время обработки (1 мин видео) | ~120s | ~23s |
 | FPS | 8-10 | 20-25 |
 | mAP@50 | 0.89 | 0.87 |
 
@@ -313,16 +249,3 @@ maxmemory-policy allkeys-lru
 2. **Батчовая обработка**: Обработка нескольких кадров одновременно
 3. **Downsampling**: Снижение разрешения для preview
 4. **Кэширование**: Кэширование часто используемых видео
-
----
-
-## Roadmap
-
-- [ ] Поддержка GPU (CUDA)
-- [ ] Детекция дополнительных объектов (обувь, очки)
-- [ ] Отслеживание объектов (tracking)
-- [ ] Аналитика нарушений
-- [ ] Уведомления (email, Telegram)
-- [ ] Docker контейнеризация
-- [ ] RESTful API документация (Swagger)
-
