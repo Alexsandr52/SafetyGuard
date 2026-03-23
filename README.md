@@ -16,6 +16,10 @@
 
 ---
 <img width="833" height="650" alt="image" src="https://github.com/user-attachments/assets/531e2679-0d7c-471c-9881-0c83e7aad0c6" />
+
+<img width="833" height="650" alt="image" src="https://github.com/user-attachments/assets/fe860cb9-f25c-4dcd-bb9d-650d167223a6" />
+
+
 ---
 
 ## Описание
